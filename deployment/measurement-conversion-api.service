@@ -1,0 +1,39 @@
+[Unit]
+Description=Measurement Conversion API (Spring Boot)
+After=network.target oracle-xe.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=measurement
+Group=measurement
+
+# Application root and JAR
+WorkingDirectory=/opt/measurement-conversion-api
+ExecStart=/usr/bin/java \
+    -Xms256m -Xmx512m \
+    -Dspring.profiles.active=prod \
+    -Dlogging.file.path=/var/log/measurement-conversion-api \
+    -jar /opt/measurement-conversion-api/measurement-conversion-api.jar
+
+# Environment file holds DB credentials and overrides (chmod 600, root-owned)
+EnvironmentFile=/etc/measurement-conversion-api/app.env
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+SuccessExitStatus=143
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=measurement-conversion-api
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
