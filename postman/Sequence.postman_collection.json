@@ -1,0 +1,96 @@
+{
+  "info": {
+    "name": "Sequence API",
+    "description": "Beginner Spring Boot Sequence API. Start the app with `mvn spring-boot:run`, then run these requests in order.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Process - simple (ab)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/sequence?input=ab",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "sequence"],
+          "query": [
+            { "key": "input", "value": "ab" }
+          ]
+        },
+        "description": "Header 'a' = size 1, value 'b' = 2 -> [2]"
+      }
+    },
+    {
+      "name": "Process - z-chain example (dz_a_aazzaaa)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/sequence?input=dz_a_aazzaaa",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "sequence"],
+          "query": [
+            { "key": "input", "value": "dz_a_aazzaaa" }
+          ]
+        },
+        "description": "Should return values [28, 53, 1]"
+      }
+    },
+    {
+      "name": "Process - long example (za_..._azaaa)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/sequence?input=za_a_a_a_a_a_a_a_a_a_a_a_a_azaaa",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "sequence"],
+          "query": [
+            { "key": "input", "value": "za_a_a_a_a_a_a_a_a_a_a_a_a_azaaa" }
+          ]
+        },
+        "description": "Should return values [40, 1]"
+      }
+    },
+    {
+      "name": "Process - invalid input (returns 400)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/sequence?input=abc123",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "sequence"],
+          "query": [
+            { "key": "input", "value": "abc123" }
+          ]
+        },
+        "description": "Digits are not allowed; the API responds with HTTP 400 and an error message."
+      }
+    },
+    {
+      "name": "History",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/sequence/history",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "sequence", "history"]
+        },
+        "description": "Returns every sequence processed since the app started."
+      }
+    }
+  ]
+}
