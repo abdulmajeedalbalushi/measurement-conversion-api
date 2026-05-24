@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Sequence API",
-    "description": "Beginner Spring Boot Sequence API. Start the app with `mvn spring-boot:run`, then run these requests in order.",
+    "description": "Beginner Spring Boot Sequence API, now backed by Oracle XE via Spring Data JPA. Start a local Oracle XE 21c (e.g. `docker run -d --name oracle-xe -p 1521:1521 -e ORACLE_PASSWORD=oracle gvenzl/oracle-xe:21-slim`), then start the app with `mvn spring-boot:run`, then run these requests in order.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -11,16 +11,16 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/sequence?input=ab",
+          "raw": "http://localhost:8080/sequence?input=ab",
           "protocol": "http",
           "host": ["localhost"],
           "port": "8080",
-          "path": ["api", "sequence"],
+          "path": ["sequence"],
           "query": [
             { "key": "input", "value": "ab" }
           ]
         },
-        "description": "Header 'a' = size 1, value 'b' = 2 -> [2]"
+        "description": "Header 'a' = size 1, value 'b' = 2 -> output [2]. Saves a new history record."
       }
     },
     {
@@ -29,16 +29,16 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/sequence?input=dz_a_aazzaaa",
+          "raw": "http://localhost:8080/sequence?input=dz_a_aazzaaa",
           "protocol": "http",
           "host": ["localhost"],
           "port": "8080",
-          "path": ["api", "sequence"],
+          "path": ["sequence"],
           "query": [
             { "key": "input", "value": "dz_a_aazzaaa" }
           ]
         },
-        "description": "Should return values [28, 53, 1]"
+        "description": "Should return output [28, 53, 1]."
       }
     },
     {
@@ -47,16 +47,16 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/sequence?input=za_a_a_a_a_a_a_a_a_a_a_a_a_azaaa",
+          "raw": "http://localhost:8080/sequence?input=za_a_a_a_a_a_a_a_a_a_a_a_a_azaaa",
           "protocol": "http",
           "host": ["localhost"],
           "port": "8080",
-          "path": ["api", "sequence"],
+          "path": ["sequence"],
           "query": [
             { "key": "input", "value": "za_a_a_a_a_a_a_a_a_a_a_a_a_azaaa" }
           ]
         },
-        "description": "Should return values [40, 1]"
+        "description": "Should return output [40, 1]."
       }
     },
     {
@@ -65,11 +65,11 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/sequence?input=abc123",
+          "raw": "http://localhost:8080/sequence?input=abc123",
           "protocol": "http",
           "host": ["localhost"],
           "port": "8080",
-          "path": ["api", "sequence"],
+          "path": ["sequence"],
           "query": [
             { "key": "input", "value": "abc123" }
           ]
@@ -78,18 +78,111 @@
       }
     },
     {
-      "name": "History",
+      "name": "History - get all",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/sequence/history",
+          "raw": "http://localhost:8080/history",
           "protocol": "http",
           "host": ["localhost"],
           "port": "8080",
-          "path": ["api", "sequence", "history"]
+          "path": ["history"]
         },
-        "description": "Returns every sequence processed since the app started."
+        "description": "Returns every history record since the app started."
+      }
+    },
+    {
+      "name": "History - get by id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/history/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["history", "1"]
+        },
+        "description": "Returns one history record. Use an id you saw in GET /history."
+      }
+    },
+    {
+      "name": "History - update by id (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"input\": \"ab\",\n  \"output\": [2],\n  \"sourceIpAddress\": \"10.0.0.5\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/history/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["history", "1"]
+        },
+        "description": "Updates the history record with id=1. All body fields are optional — send only the ones you want to change."
+      }
+    },
+    {
+      "name": "History - update only IP (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourceIpAddress\": \"192.168.1.42\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/history/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["history", "1"]
+        },
+        "description": "Demonstrates partial update — only the sourceIpAddress is changed."
+      }
+    },
+    {
+      "name": "History - clear all (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/history",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["history"]
+        },
+        "description": "Removes every history record from memory. Subsequent GET /history returns an empty list. The next saved record starts again at id = 1."
+      }
+    },
+    {
+      "name": "History - update unknown id (returns 404)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"input\": \"ab\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/history/9999",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["history", "9999"]
+        },
+        "description": "If no record has the given id, the API responds with HTTP 404."
       }
     }
   ]

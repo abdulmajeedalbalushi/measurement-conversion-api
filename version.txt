@@ -1,0 +1,8 @@
+Sequence API — Changelog
+
+v1.0 - Initial sequence API
+v1.1 - Added history records (id, timestamp, sourceIpAddress, input, output)
+v1.2 - Added PUT update endpoint for history records
+v1.3 - Added DELETE history endpoint to clear all records
+v1.4 - Added logging system (console + rolling daily files, 7-day retention)
+v1.5 - Added Oracle XE persistence (Spring Data JPA + Hibernate)
