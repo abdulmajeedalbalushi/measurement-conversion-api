@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logback configuration used by Spring Boot.
+
+  Beginner notes:
+   - Spring Boot picks this file up automatically because it's named
+     logback-spring.xml and lives in src/main/resources.
+   - We define two "appenders" (places logs go): CONSOLE and FILE.
+   - The FILE appender uses a "rolling policy": every day it starts a new
+     log file and deletes any file older than 7 days. That is what we mean
+     by "rolling logs that keep one week of logs".
+-->
+<configuration>
+
+    <!-- Where the log files live. Created automatically on startup. -->
+    <property name="LOG_DIR" value="logs"/>
+
+    <!-- Console: logs printed to the terminal where you ran the app. -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File: logs written to disk, rotated daily, kept for 7 days. -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/sequence-api.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- One file per day: sequence-api.2026-05-24.log, etc. -->
+            <fileNamePattern>${LOG_DIR}/sequence-api.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- Keep one week of history; older files are deleted automatically. -->
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Our own packages: log at INFO level. -->
+    <logger name="com.example.sequence" level="INFO"/>
+
+    <!-- Everything else (Spring, Tomcat, etc.): INFO is fine for learning. -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

@@ -1,0 +1,112 @@
+package com.example.sequence.model;
+
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.Table;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * One row of processing history, persisted in Oracle XE.
+ *
+ * Beginner notes:
+ *  - @Entity tells JPA "map this class to a database table".
+ *  - @Table picks the table name (otherwise it would be the class name).
+ *  - @Id marks the primary key. @GeneratedValue(IDENTITY) tells Oracle to
+ *    auto-assign the id (Oracle 12c+ supports IDENTITY columns natively).
+ *  - The output list is stored in a separate child table
+ *    HISTORY_RECORD_OUTPUT(history_record_id, position, value). @OrderColumn
+ *    preserves list order. EAGER fetching keeps the values available when
+ *    Jackson serialises the entity to JSON.
+ *  - JPA requires a no-arg constructor — keep it public/protected.
+ */
+@Entity
+@Table(name = "history_record")
+public class HistoryRecord {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
+
+    @Column(name = "source_ip_address", length = 64)
+    private String sourceIpAddress;
+
+    @Column(name = "input", nullable = false, length = 1024)
+    private String input;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "history_record_output",
+        joinColumns = @JoinColumn(name = "history_record_id")
+    )
+    @OrderColumn(name = "position")
+    @Column(name = "value")
+    private List<Integer> output;
+
+    public HistoryRecord() {
+    }
+
+    public HistoryRecord(Long id,
+                         LocalDateTime timestamp,
+                         String sourceIpAddress,
+                         String input,
+                         List<Integer> output) {
+        this.id = id;
+        this.timestamp = timestamp;
+        this.sourceIpAddress = sourceIpAddress;
+        this.input = input;
+        this.output = output;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getSourceIpAddress() {
+        return sourceIpAddress;
+    }
+
+    public void setSourceIpAddress(String sourceIpAddress) {
+        this.sourceIpAddress = sourceIpAddress;
+    }
+
+    public String getInput() {
+        return input;
+    }
+
+    public void setInput(String input) {
+        this.input = input;
+    }
+
+    public List<Integer> getOutput() {
+        return output;
+    }
+
+    public void setOutput(List<Integer> output) {
+        this.output = output;
+    }
+}

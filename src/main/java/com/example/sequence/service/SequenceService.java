@@ -1,19 +1,27 @@
 package com.example.sequence.service;
 
+import com.example.sequence.model.HistoryRecord;
 import com.example.sequence.model.Sequence;
-import com.example.sequence.model.SequenceHistory;
+import com.example.sequence.repositories.HistoryRecordRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Business logic for the Sequence API.
  *
- * Responsibilities:
- *  - Validate the raw input.
- *  - Convert the sequence into a list of numbers.
- *  - Save the processed sequence into the in-memory history.
+ * Persistence:
+ *  - Every method that reads or writes history goes through
+ *    {@link HistoryRecordRepository}, which Spring Data JPA implements
+ *    against Oracle XE at runtime.
+ *  - Write methods are annotated @Transactional so Hibernate flushes the
+ *    changes in a single transaction.
  *
  * Encoding (z-chain):
  *  - A "z-chain" is zero or more 'z' characters (each worth 26) followed by ONE
@@ -22,36 +30,113 @@ import java.util.List;
  *    are in the package. Each value that follows is itself a z-chain.
  *  - After one package is read we start over with a new header. We repeat until
  *    the input is exhausted.
- *
- * Examples:
- *  - "ab"          -> header 'a' = size 1, value 'b' = 2          -> [2]
- *  - "dz_a_aazzaaa" -> [28, 53, 1]
- *  - "za_a_a_a_a_a_a_a_a_a_a_a_a_azaaa" -> [40, 1]
  */
 @Service
 public class SequenceService {
 
-    private final SequenceHistory history;
+    private static final Logger log = LoggerFactory.getLogger(SequenceService.class);
 
-    public SequenceService(SequenceHistory history) {
-        this.history = history;
+    private final HistoryRecordRepository repo;
+
+    public SequenceService(HistoryRecordRepository repo) {
+        this.repo = repo;
     }
 
-    /** Process the raw input: validate, parse, and save into history. */
-    public Sequence process(String input) {
+    /**
+     * Process the raw input: validate, parse, and persist a HistoryRecord.
+     *
+     * @param input            the raw sequence string from the client
+     * @param sourceIpAddress  the IP address of the HTTP caller
+     * @return the saved HistoryRecord (with the database-assigned id)
+     */
+    @Transactional
+    public HistoryRecord process(String input, String sourceIpAddress) {
+        log.debug("Processing sequence input='{}' from {}", input, sourceIpAddress);
         if (!Sequence.isValid(input)) {
+            log.warn("Rejecting invalid input '{}'", input);
             throw new IllegalArgumentException(
                 "input must be non-empty and contain only letters and underscores");
         }
-        List<Integer> values = parse(input.toLowerCase());
-        Sequence sequence = new Sequence(input, values);
-        history.save(sequence);
-        return sequence;
+        List<Integer> output = parse(input.toLowerCase());
+        HistoryRecord record = new HistoryRecord(
+            null,
+            LocalDateTime.now(),
+            sourceIpAddress,
+            input,
+            output
+        );
+        HistoryRecord saved = repo.save(record);
+        log.info("Saved history record id={} input='{}' output={}",
+            saved.getId(), saved.getInput(), saved.getOutput());
+        return saved;
     }
 
-    /** Return the full processing history. */
-    public List<Sequence> history() {
-        return history.list();
+    /** Return all history records. */
+    public List<HistoryRecord> getAllHistory() {
+        List<HistoryRecord> all = repo.findAll();
+        log.debug("Fetched {} history record(s)", all.size());
+        return all;
+    }
+
+    /** Remove every history record from the database. */
+    @Transactional
+    public void clearHistory() {
+        log.info("Clearing all history records");
+        repo.deleteAll();
+    }
+
+    /** Return one history record by id. */
+    public Optional<HistoryRecord> getHistoryById(Long id) {
+        log.debug("Looking up history record id={}", id);
+        return repo.findById(id);
+    }
+
+    /**
+     * Update an existing history record by id.
+     *
+     * If the caller supplies a new input, we re-parse it to keep the output
+     * consistent with the input (unless the caller also supplied an explicit
+     * output, which then wins). The id and timestamp are never changed.
+     */
+    @Transactional
+    public Optional<HistoryRecord> updateHistory(Long id,
+                                                 String newInput,
+                                                 List<Integer> newOutput,
+                                                 String newSourceIpAddress) {
+        log.debug("Updating history id={} newInput='{}' newOutput={} newIp='{}'",
+            id, newInput, newOutput, newSourceIpAddress);
+
+        Optional<HistoryRecord> found = repo.findById(id);
+        if (found.isEmpty()) {
+            log.warn("History record not found for update: id={}", id);
+            return Optional.empty();
+        }
+
+        List<Integer> outputToStore = newOutput;
+        if (newInput != null) {
+            if (!Sequence.isValid(newInput)) {
+                log.warn("Rejecting invalid input on update id={}: '{}'", id, newInput);
+                throw new IllegalArgumentException(
+                    "input must be non-empty and contain only letters and underscores");
+            }
+            if (outputToStore == null) {
+                outputToStore = parse(newInput.toLowerCase());
+            }
+        }
+
+        HistoryRecord r = found.get();
+        if (newInput != null) {
+            r.setInput(newInput);
+        }
+        if (outputToStore != null) {
+            r.setOutput(outputToStore);
+        }
+        if (newSourceIpAddress != null) {
+            r.setSourceIpAddress(newSourceIpAddress);
+        }
+        HistoryRecord saved = repo.save(r);
+        log.info("History record updated: id={}", id);
+        return Optional.of(saved);
     }
 
     // ---------------- parsing helpers ----------------
