@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "record")
+@Table(name = "history_record")
 public class HistoryRecord {
 
     @Id
