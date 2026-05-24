@@ -2,14 +2,6 @@ package com.example.sequence.model;
 
 import java.util.List;
 
-/**
- * A processed sequence: the raw input string and the resulting numeric values.
- *
- * Beginner notes:
- *  - This is a plain Java object (POJO), not a Spring bean.
- *  - The constructor validates that the input only contains letters and underscores.
- *  - Jackson uses the public getters to serialise this object to JSON.
- */
 public class Sequence {
 
     private final String input;

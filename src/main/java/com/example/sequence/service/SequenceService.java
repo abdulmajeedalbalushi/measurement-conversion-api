@@ -13,24 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Business logic for the Sequence API.
- *
- * Persistence:
- *  - Every method that reads or writes history goes through
- *    {@link HistoryRecordRepository}, which Spring Data JPA implements
- *    against Oracle XE at runtime.
- *  - Write methods are annotated @Transactional so Hibernate flushes the
- *    changes in a single transaction.
- *
- * Encoding (z-chain):
- *  - A "z-chain" is zero or more 'z' characters (each worth 26) followed by ONE
- *    terminator character (a=1, b=2, ..., z=26, '_'=0, anything else=0).
- *  - The first z-chain in the input is the HEADER and tells us how many values
- *    are in the package. Each value that follows is itself a z-chain.
- *  - After one package is read we start over with a new header. We repeat until
- *    the input is exhausted.
- */
 @Service
 public class SequenceService {
 
@@ -42,13 +24,6 @@ public class SequenceService {
         this.repo = repo;
     }
 
-    /**
-     * Process the raw input: validate, parse, and persist a HistoryRecord.
-     *
-     * @param input            the raw sequence string from the client
-     * @param sourceIpAddress  the IP address of the HTTP caller
-     * @return the saved HistoryRecord (with the database-assigned id)
-     */
     @Transactional
     public HistoryRecord process(String input, String sourceIpAddress) {
         log.debug("Processing sequence input='{}' from {}", input, sourceIpAddress);
@@ -91,13 +66,7 @@ public class SequenceService {
         return repo.findById(id);
     }
 
-    /**
-     * Update an existing history record by id.
-     *
-     * If the caller supplies a new input, we re-parse it to keep the output
-     * consistent with the input (unless the caller also supplied an explicit
-     * output, which then wins). The id and timestamp are never changed.
-     */
+    //Update an existing history record by id.
     @Transactional
     public Optional<HistoryRecord> updateHistory(Long id,
                                                  String newInput,

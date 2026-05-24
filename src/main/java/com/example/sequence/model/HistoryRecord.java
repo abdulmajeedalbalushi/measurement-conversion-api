@@ -15,22 +15,8 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * One row of processing history, persisted in Oracle XE.
- *
- * Beginner notes:
- *  - @Entity tells JPA "map this class to a database table".
- *  - @Table picks the table name (otherwise it would be the class name).
- *  - @Id marks the primary key. @GeneratedValue(IDENTITY) tells Oracle to
- *    auto-assign the id (Oracle 12c+ supports IDENTITY columns natively).
- *  - The output list is stored in a separate child table
- *    HISTORY_RECORD_OUTPUT(history_record_id, position, value). @OrderColumn
- *    preserves list order. EAGER fetching keeps the values available when
- *    Jackson serialises the entity to JSON.
- *  - JPA requires a no-arg constructor — keep it public/protected.
- */
 @Entity
-@Table(name = "history_record")
+@Table(name = "record")
 public class HistoryRecord {
 
     @Id
